@@ -788,7 +788,7 @@ tbody tr.inativa{opacity:.55;}
       <button class="btn ghost" data-close="modalImport">✕</button>
     </div>
     <div class="modal-body">
-      <p class="hint" style="margin-top:0;">Aceita planilhas no mesmo layout do modelo (Colaborador, CPF, Atividade, Cargo, Turno, Jornada, Hora refeição, Jornada Semanal, Escala/Folga). Pessoas com CPF já cadastrado na base são ignoradas automaticamente — ninguém entra duplicado.</p>
+      <p class="hint" style="margin-top:0;">Aceita planilhas no mesmo layout do modelo (Colaborador, CPF, Atividade, Cargo, Turno, Jornada, Hora refeição, Jornada Semanal, Escala/Folga, Data de admissão). Pessoas com CPF já cadastrado na base são ignoradas automaticamente — ninguém entra duplicado. Ao final, o sistema também compara com a base atual: quem não aparecer nesta planilha é listado para você decidir se foi desligado.</p>
       <div class="dropzone" id="dropzone">
         <div>📄 Clique para escolher o arquivo (.xlsx)</div>
         <div class="hint" style="margin-top:6px;">ou arraste o arquivo até aqui</div>
@@ -798,6 +798,17 @@ tbody tr.inativa{opacity:.55;}
         <div class="section-title">Resultado</div>
         <p id="importSummary" style="font-weight:600;"></p>
         <div class="import-result-list" id="importIgnoredList" style="display:none;"></div>
+      </div>
+      <div id="importWarningsBox" style="display:none;margin-top:14px;">
+        <div class="section-title">⚠️ Avisos de data de admissão</div>
+        <p class="hint" style="margin-top:0;">Nessas pessoas a data de admissão da planilha não fez sentido (vazia, inválida ou no futuro) — foi usada a data de hoje no lugar. Ajuste manualmente se souber a data certa.</p>
+        <div class="import-result-list" id="importWarningsList"></div>
+      </div>
+      <div id="importAusentesBox" style="display:none;margin-top:14px;">
+        <div class="section-title">Pessoas da base que não aparecem nesta planilha</div>
+        <p class="hint" style="margin-top:0;">Isso não significa que foram desligadas — pode ser só um recorte diferente da planilha. Marque abaixo apenas quem você confirma que saiu, e clique em "Desligar selecionados". Quem não for marcado continua ativo normalmente.</p>
+        <div class="import-result-list" id="importAusentesList" style="max-height:260px;"></div>
+        <button class="btn danger small" id="btnConfirmDesligarAusentes" style="margin-top:10px;">Desligar selecionados</button>
       </div>
     </div>
     <div class="modal-foot">
@@ -912,6 +923,46 @@ let ui = {
 ============================================================ */
 function uid(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
+/* Tenta entender a data de admissão vinda da planilha (texto dd/mm/aaaa, aaaa-mm-dd,
+   ou número de série do Excel) e verifica se ela "faz sentido" (não é no futuro,
+   nem absurdamente antiga). Retorna { iso, warning } — se warning existir, iso vem
+   como null e quem chamou deve usar a data de hoje como alternativa. */
+function parseAdmissaoRaw(raw){
+  const txt = (raw==null ? '' : String(raw)).trim();
+  if(!txt) return { iso:null, warning:null };
+  let d = null;
+  const brMatch = txt.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  const isoMatch = txt.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if(brMatch){
+    let [, dd, mm, yyyy] = brMatch;
+    if(yyyy.length===2) yyyy = (Number(yyyy) > 50 ? '19' : '20') + yyyy;
+    d = new Date(Number(yyyy), Number(mm)-1, Number(dd));
+  } else if(isoMatch){
+    const [, yyyy, mm, dd] = isoMatch;
+    d = new Date(Number(yyyy), Number(mm)-1, Number(dd));
+  } else if(/^\d+(\.\d+)?$/.test(txt)){
+    // número de série de data do Excel (dias desde 1899-12-30)
+    const serial = Number(txt);
+    if(serial > 20000 && serial < 90000){
+      d = new Date(Date.UTC(1899,11,30) + serial*86400000);
+    }
+  } else {
+    const tryDate = new Date(txt);
+    if(!isNaN(tryDate.getTime())) d = tryDate;
+  }
+  if(!d || isNaN(d.getTime())){
+    return { iso:null, warning:`data "${txt}" não foi reconhecida` };
+  }
+  const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const hoje = todayISO();
+  if(iso > hoje){
+    return { iso:null, warning:`data "${txt}" está no futuro` };
+  }
+  if(d.getFullYear() < 1970){
+    return { iso:null, warning:`data "${txt}" parece implausível (muito antiga)` };
+  }
+  return { iso, warning:null };
+}
 function fmtDateBR(iso){
   if(!iso) return '—';
   const [y,m,d] = iso.split('-');
@@ -2011,6 +2062,8 @@ function runExport(){
 function bindImport(){
   document.getElementById('btnImport').addEventListener('click', ()=>{
     document.getElementById('importResult').style.display='none';
+    document.getElementById('importWarningsBox').style.display='none';
+    document.getElementById('importAusentesBox').style.display='none';
     document.getElementById('importFile').value='';
     openModal('modalImport');
   });
@@ -2040,6 +2093,7 @@ const HEADER_ALIASES = {
   'jornada semanal':'jornadaSemanal',
   'escala folga':'folga', 'escala/ folga':'folga', 'escala/folga':'folga', 'folga':'folga',
   'setor':'setor',
+  'data admissao':'dataAdmissaoRaw', 'data de admissao':'dataAdmissaoRaw', 'admissao':'dataAdmissaoRaw', 'data de admissão':'dataAdmissaoRaw',
   'matricula':'matricula', 'matrícula':'matricula'
 };
 function normalizeHeader(h){
@@ -2062,8 +2116,10 @@ async function processImportFile(file){
 
     const existingCpfs = new Set(state.people.map(p=>normalizeCpfDigits(p.cpf)).filter(Boolean));
     const newCpfsThisImport = new Set();
+    const sheetCpfs = new Set(); // todo CPF que aparece na planilha nova, adicionado ou não
     let added = 0;
     const ignored = [];
+    const admissaoWarnings = [];
     const hoje = todayISO();
 
     rows.forEach(row=>{
@@ -2075,11 +2131,18 @@ async function processImportFile(file){
       if(!rec.nome) return;
 
       const cpfDigits = normalizeCpfDigits(rec.cpf);
+      if(cpfDigits) sheetCpfs.add(cpfDigits);
+
       if(cpfDigits && (existingCpfs.has(cpfDigits) || newCpfsThisImport.has(cpfDigits))){
         ignored.push(`${titleCase(rec.nome)} (CPF já cadastrado)`);
         return;
       }
       if(cpfDigits) newCpfsThisImport.add(cpfDigits);
+
+      const admissao = parseAdmissaoRaw(rec.dataAdmissaoRaw);
+      if(admissao.warning){
+        admissaoWarnings.push(`${titleCase(rec.nome)}: ${admissao.warning} — usada a data de hoje (${hoje})`);
+      }
 
       const novo = {
         id: uid(),
@@ -2090,7 +2153,7 @@ async function processImportFile(file){
         cargo: rec.cargo ? titleCase(rec.cargo) : '',
         setor: rec.setor ? titleCase(rec.setor) : '',
         departamento:'',
-        dataAdmissao: hoje,
+        dataAdmissao: admissao.iso || hoje,
         dataNascimento:'',
         atividade: rec.atividade || 'A definir',
         funcao: rec.funcao || 'A definir',
@@ -2108,6 +2171,9 @@ async function processImportFile(file){
       added++;
     });
 
+    // Compara com a base atual: quem está ativo mas não apareceu (por CPF) nesta planilha nova
+    const ausentes = state.people.filter(p=> p.status==='ativo' && p.cpf && !sheetCpfs.has(normalizeCpfDigits(p.cpf)));
+
     persist();
     populateFilterOptions(); populateDatalists();
     renderTable(); renderDashboard();
@@ -2121,11 +2187,59 @@ async function processImportFile(file){
     } else {
       listEl.style.display='none';
     }
-    toast(`Importação concluída: ${added} adicionada(s), ${ignored.length} ignorada(s).`);
+
+    const warnBox = document.getElementById('importWarningsBox');
+    if(admissaoWarnings.length){
+      warnBox.style.display='block';
+      document.getElementById('importWarningsList').innerHTML = admissaoWarnings.map(t=>`<div>• ${escapeHtml(t)}</div>`).join('');
+    } else {
+      warnBox.style.display='none';
+    }
+
+    renderImportAusentes(ausentes);
+
+    toast(`Importação concluída: ${added} adicionada(s), ${ignored.length} ignorada(s)${ausentes.length ? `, ${ausentes.length} não encontrada(s) na planilha nova` : ''}.`);
   }catch(e){
     console.error(e);
     toast('Não foi possível ler essa planilha. Verifique o formato e tente novamente.');
   }
+}
+
+function renderImportAusentes(ausentes){
+  const box = document.getElementById('importAusentesBox');
+  const listEl = document.getElementById('importAusentesList');
+  if(!ausentes.length){
+    box.style.display='none';
+    listEl.innerHTML='';
+    return;
+  }
+  box.style.display='block';
+  listEl.innerHTML = ausentes.map(p=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;">
+      <input type="checkbox" class="ausenteCheck" data-id="${p.id}">
+      <span>${escapeHtml(p.nome)} <span class="footnote">— ${escapeHtml(p.cargo||'—')} · ${escapeHtml(p.setor||'—')}</span></span>
+    </label>
+  `).join('');
+  const btn = document.getElementById('btnConfirmDesligarAusentes');
+  btn.onclick = ()=>{
+    const ids = Array.from(listEl.querySelectorAll('.ausenteCheck:checked')).map(cb=>cb.dataset.id);
+    if(ids.length===0){ toast('Marque ao menos uma pessoa para desligar.'); return; }
+    if(!confirm(`Desligar ${ids.length} pessoa(s) marcada(s)? Isso mantém o histórico, apenas muda o status para inativo.`)) return;
+    const hoje = todayISO();
+    state.people.forEach(p=>{
+      if(!ids.includes(p.id)) return;
+      p.status = 'inativo';
+      p.dataDesligamento = hoje;
+      p.historico = p.historico || [];
+      p.historico.push({ data:hoje, evento:'Desligamento', detalhe:'Não constava na planilha importada mais recente — desligamento confirmado manualmente.' });
+    });
+    persist();
+    renderTable(); renderDashboard();
+    toast(`${ids.length} pessoa(s) desligada(s).`);
+    // remove as marcadas da lista de pendentes (as demais continuam disponíveis para decisão)
+    const restantes = ausentes.filter(p=>!ids.includes(p.id));
+    renderImportAusentes(restantes);
+  };
 }
 
 /* ============================================================
