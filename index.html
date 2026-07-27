@@ -83,7 +83,8 @@ main{flex:1;padding:26px 28px 60px 28px;max-width:1360px;width:100%;margin:0 aut
 .view.active{display:block;}
 @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
 
-.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:28px 0 12px 0;}
+.section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);margin:28px 0 12px 0;display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';width:4px;height:14px;border-radius:3px;background:linear-gradient(180deg,var(--gold) 0%, var(--green-mid) 100%);display:inline-block;}
 .section-title:first-child{margin-top:0;}
 
 .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;}
@@ -98,15 +99,16 @@ main{flex:1;padding:26px 28px 60px 28px;max-width:1360px;width:100%;margin:0 aut
 .stat-card.bad .num{color:var(--red);}
 
 .silo-wrap{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:22px 24px;box-shadow:var(--shadow);
+  background:linear-gradient(160deg,var(--surface) 0%, var(--surface-2) 130%);border:1px solid var(--border);border-radius:14px;
+  padding:24px 26px;box-shadow:0 2px 6px rgba(30,59,46,0.06);
   display:flex;gap:32px;align-items:flex-end;flex-wrap:wrap;
 }
-.silo{display:flex;flex-direction:column;align-items:center;gap:10px;width:110px;}
+.silo{display:flex;flex-direction:column;align-items:center;gap:10px;width:110px;transition:transform .16s ease;}
+.silo:hover{transform:translateY(-3px);}
 .silo-body{
   position:relative;width:74px;height:150px;
-  border:3px solid var(--green-deep);border-radius:14px 14px 8px 8px;
-  overflow:hidden;background:var(--surface-2);
+  border:3px solid var(--green-deep);border-radius:16px 16px 8px 8px;
+  overflow:hidden;background:var(--surface-2);box-shadow:inset 0 2px 5px rgba(0,0,0,0.08);
 }
 .silo-fill{
   position:absolute;bottom:0;left:0;right:0;
@@ -118,11 +120,12 @@ main{flex:1;padding:26px 28px 60px 28px;max-width:1360px;width:100%;margin:0 aut
   background:rgba(255,255,255,0.35);
 }
 .silo-cap{position:absolute;top:-3px;left:-3px;right:-3px;height:14px;background:var(--green-deep);border-radius:14px 14px 0 0;}
-.silo-count{font-family:'Space Grotesk';font-weight:700;font-size:20px;}
+.silo-count{font-family:'Space Grotesk';font-weight:700;font-size:21px;}
 .silo-name{font-size:12.5px;color:var(--ink-soft);font-weight:600;text-align:center;}
 
 .barlist-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;}
-.barlist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+.barlist{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:19px 21px;box-shadow:0 2px 6px rgba(30,59,46,0.06);transition:box-shadow .16s ease;}
+.barlist:hover{box-shadow:0 6px 18px rgba(30,59,46,0.09);}
 .barlist h3{margin:0 0 14px 0;font-size:14px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
 .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px;}
 .bar-row .bar-label{width:150px;flex-shrink:0;color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -336,26 +339,54 @@ tbody tr.inativa{opacity:.55;}
 @media(max-width:900px){.dash-grid{grid-template-columns:1fr;}}
 .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
 .kpi-card{
-  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:16px 18px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:flex-start;
+  background:linear-gradient(160deg,var(--surface) 0%, var(--surface-2) 120%);
+  border:1px solid var(--border);border-radius:14px;
+  padding:17px 19px;box-shadow:0 2px 6px rgba(30,59,46,0.06);display:flex;gap:13px;align-items:flex-start;
   border-left:4px solid var(--green-mid);
+  transition:transform .16s ease, box-shadow .16s ease;
 }
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(30,59,46,0.12);}
 .kpi-card.c-gold{border-left-color:var(--gold);}
 .kpi-card.c-red{border-left-color:var(--red);}
 .kpi-card.c-brown{border-left-color:var(--brown);}
 .kpi-icon{
-  width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  background:var(--green-soft);color:var(--green-deep);font-size:17px;
+  width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:var(--green-soft);color:var(--green-deep);font-size:18px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.5);
 }
 .kpi-card.c-gold .kpi-icon{background:var(--gold-soft);color:var(--gold-deep);}
 .kpi-card.c-red .kpi-icon{background:var(--red-soft);color:var(--red);}
 .kpi-card.c-brown .kpi-icon{background:var(--brown-soft);color:var(--brown);}
-.kpi-num{font-family:'Space Grotesk';font-size:26px;font-weight:700;line-height:1;}
+.kpi-num{font-family:'Space Grotesk';font-size:27px;font-weight:700;line-height:1;}
 .kpi-label{font-size:12px;color:var(--ink-soft);margin-top:4px;font-weight:500;}
 
-.panel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+.panel-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:19px 21px;
+  box-shadow:0 2px 6px rgba(30,59,46,0.06);transition:box-shadow .16s ease;
+}
+.panel-card:hover{box-shadow:0 6px 18px rgba(30,59,46,0.09);}
 .panel-card h3{margin:0 0 4px 0;font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);}
 .panel-card .panel-sub{font-size:12px;color:var(--ink-faint);margin:0 0 14px 0;}
+
+/* ---------- Tabela resumo ---------- */
+.resumo-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;
+  box-shadow:0 2px 6px rgba(30,59,46,0.06);overflow-x:auto;
+}
+table.resumo-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.resumo-table th{
+  text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);
+  padding:8px 10px;border-bottom:2px solid var(--border-strong);white-space:nowrap;
+}
+table.resumo-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
+table.resumo-table tbody tr{transition:background .1s ease;}
+table.resumo-table tbody tr:hover{background:var(--surface-2);}
+table.resumo-table tr.resumo-total-row{font-weight:700;background:var(--surface-2);}
+table.resumo-table tr.resumo-total-row td{border-bottom:none;border-top:2px solid var(--border-strong);}
+.pct-cell{display:flex;align-items:center;gap:8px;min-width:110px;}
+.pct-bar{flex:1;height:7px;border-radius:4px;background:var(--border);overflow:hidden;min-width:60px;}
+.pct-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold) 0%, var(--green-mid) 100%);border-radius:4px;}
+.pct-label{font-size:11.5px;color:var(--ink-soft);font-weight:600;width:34px;text-align:right;}
 
 .donut-row{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
 .donut{flex-shrink:0;width:120px;height:120px;border-radius:50%;position:relative;}
@@ -453,6 +484,7 @@ tbody tr.inativa{opacity:.55;}
       <div class="section-title">Visão geral</div>
       <div class="toolbar">
         <select id="dfSetor"><option value="">Todos os setores</option></select>
+        <select id="dfCargo"><option value="">Todos os cargos</option></select>
         <select id="dfAtividade"><option value="">Todas as atividades</option></select>
         <select id="dfTurno"><option value="">Todos os turnos</option></select>
         <div class="spacer"></div>
@@ -497,6 +529,11 @@ tbody tr.inativa{opacity:.55;}
           </div>
         </div>
       </div>
+
+      <div class="section-title">Tabela resumo por cargo</div>
+      <div class="resumo-card">
+        <div id="resumoTableWrap"></div>
+      </div>
     </section>
 
     <!-- ===== PESSOAS ===== -->
@@ -504,6 +541,7 @@ tbody tr.inativa{opacity:.55;}
       <div class="toolbar">
         <input type="text" id="fBusca" placeholder="Buscar por nome, matrícula ou CPF…">
         <select id="fSetor"><option value="">Todos os setores</option></select>
+        <select id="fCargo"><option value="">Todos os cargos</option></select>
         <select id="fAtividade"><option value="">Todas as atividades</option></select>
         <select id="fTurno"><option value="">Todos os turnos</option></select>
         <select id="fFuncao"><option value="">Todas as funções</option></select>
@@ -910,8 +948,8 @@ const DEFAULT_USERS = [
 let state = null;
 let currentUser = null;
 let ui = {
-  filters: { busca:"", setor:"", atividade:"", turno:"", funcao:"", jornadaSemanal:"", situacao:"", status:"ativo" },
-  dashFilters: { setor:"", atividade:"", turno:"" },
+  filters: { busca:"", setor:"", cargo:"", atividade:"", turno:"", funcao:"", jornadaSemanal:"", situacao:"", status:"ativo" },
+  dashFilters: { setor:"", cargo:"", atividade:"", turno:"" },
   selected: new Set(),
   editingId: null,
   bulkIds: [],
@@ -1212,11 +1250,13 @@ function renderAll(){
 
 function bindDashboardFilters(){
   document.getElementById('dfSetor').addEventListener('change', e=>{ ui.dashFilters.setor = e.target.value; renderDashboard(); });
+  document.getElementById('dfCargo').addEventListener('change', e=>{ ui.dashFilters.cargo = e.target.value; renderDashboard(); });
   document.getElementById('dfAtividade').addEventListener('change', e=>{ ui.dashFilters.atividade = e.target.value; renderDashboard(); });
   document.getElementById('dfTurno').addEventListener('change', e=>{ ui.dashFilters.turno = e.target.value; renderDashboard(); });
   document.getElementById('btnDashClearFilters').addEventListener('click', ()=>{
-    ui.dashFilters = { setor:'', atividade:'', turno:'' };
+    ui.dashFilters = { setor:'', cargo:'', atividade:'', turno:'' };
     document.getElementById('dfSetor').value = '';
+    document.getElementById('dfCargo').value = '';
     document.getElementById('dfAtividade').value = '';
     document.getElementById('dfTurno').value = '';
     renderDashboard();
@@ -1227,6 +1267,7 @@ function renderDashboard(){
   const df = ui.dashFilters;
   const people = state.people.filter(p=>{
     if(df.setor && p.setor !== df.setor) return false;
+    if(df.cargo && p.cargo !== df.cargo) return false;
     if(df.atividade && p.atividade !== df.atividade) return false;
     if(df.turno && p.turno !== df.turno) return false;
     return true;
@@ -1290,6 +1331,79 @@ function renderDashboard(){
 
   renderTurnover(people);
   renderAttention(pendentes);
+  renderResumoTable(ativos, pendentes);
+}
+
+function renderResumoTable(ativos, pendentes){
+  const wrap = document.getElementById('resumoTableWrap');
+  if(!ativos.length){
+    wrap.innerHTML = '<p class="footnote">Sem pessoas ativas para resumir com os filtros atuais.</p>';
+    return;
+  }
+  const pendentesIds = new Set(pendentes.map(p=>p.id));
+  const porCargo = {};
+  ativos.forEach(p=>{
+    const c = p.cargo || 'Sem cargo definido';
+    const d = porCargo[c] || (porCargo[c] = { total:0, pendentes:0, gravida:0, licenca:0, afastada:0 });
+    d.total++;
+    if(pendentesIds.has(p.id)) d.pendentes++;
+    if(p.gravida) d.gravida++;
+    if(p.licenca) d.licenca++;
+    if(p.afastada) d.afastada++;
+  });
+  const totalAtivos = ativos.length;
+  const cargosOrdenados = Object.keys(porCargo).sort((a,b)=> porCargo[b].total - porCargo[a].total);
+
+  const badgeOrDash = (n, cls)=> n ? `<span class="badge ${cls}">${n}</span>` : `<span class="footnote">—</span>`;
+
+  const linhas = cargosOrdenados.map(c=>{
+    const d = porCargo[c];
+    const pct = totalAtivos ? Math.round(d.total/totalAtivos*100) : 0;
+    return `<tr>
+      <td>${escapeHtml(c)}</td>
+      <td><strong>${d.total}</strong></td>
+      <td><div class="pct-cell"><div class="pct-bar"><div class="pct-bar-fill" style="width:${pct}%"></div></div><span class="pct-label">${pct}%</span></div></td>
+      <td>${badgeOrDash(d.pendentes, 'pendente')}</td>
+      <td>${badgeOrDash(d.gravida, 'gravida')}</td>
+      <td>${badgeOrDash(d.licenca, 'licenca')}</td>
+      <td>${badgeOrDash(d.afastada, 'afastada')}</td>
+    </tr>`;
+  }).join('');
+
+  const totais = {
+    pendentes: pendentes.length,
+    gravida: ativos.filter(p=>p.gravida).length,
+    licenca: ativos.filter(p=>p.licenca).length,
+    afastada: ativos.filter(p=>p.afastada).length
+  };
+
+  wrap.innerHTML = `
+    <table class="resumo-table">
+      <thead>
+        <tr>
+          <th>Cargo</th>
+          <th>Ativos</th>
+          <th>% do total</th>
+          <th>Pendentes</th>
+          <th>Gestante</th>
+          <th>Licença</th>
+          <th>Afastado(a)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${linhas}
+        <tr class="resumo-total-row">
+          <td>Total</td>
+          <td>${totalAtivos}</td>
+          <td></td>
+          <td>${badgeOrDash(totais.pendentes, 'pendente')}</td>
+          <td>${badgeOrDash(totais.gravida, 'gravida')}</td>
+          <td>${badgeOrDash(totais.licenca, 'licenca')}</td>
+          <td>${badgeOrDash(totais.afastada, 'afastada')}</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
 }
 
 function renderDonut(segments){
@@ -1393,19 +1507,24 @@ function populateFilterOptions(){
   const turnos = state.catalogs.turnos.slice();
   const jornadasSemanais = state.catalogs.jornadasSemanais.slice();
   const funcoes = state.catalogs.funcoes.slice();
+  const cargos = [];
   state.people.forEach(p=>{
     if(p.setor && !setores.includes(p.setor)) setores.push(p.setor);
     if(p.atividade && !atividades.includes(p.atividade)) atividades.push(p.atividade);
     if(p.turno && !turnos.includes(p.turno)) turnos.push(p.turno);
     if(p.jornadaSemanal && !jornadasSemanais.includes(p.jornadaSemanal)) jornadasSemanais.push(p.jornadaSemanal);
     if(p.funcao && !funcoes.includes(p.funcao)) funcoes.push(p.funcao);
+    if(p.cargo && !cargos.includes(p.cargo)) cargos.push(p.cargo);
   });
+  cargos.sort((a,b)=>a.localeCompare(b,'pt-BR'));
   fillSelect('fSetor', setores, ui.filters.setor, 'Todos os setores');
+  fillSelect('fCargo', cargos, ui.filters.cargo, 'Todos os cargos');
   fillSelect('fAtividade', atividades, ui.filters.atividade, 'Todas as atividades');
   fillSelect('fTurno', turnos, ui.filters.turno, 'Todos os turnos');
   fillSelect('fFuncao', funcoes, ui.filters.funcao, 'Todas as funções');
   fillSelect('fJornadaSemanal', jornadasSemanais, ui.filters.jornadaSemanal, 'Todas as jornadas semanais');
   fillSelect('dfSetor', setores, ui.dashFilters.setor, 'Todos os setores');
+  fillSelect('dfCargo', cargos, ui.dashFilters.cargo, 'Todos os cargos');
   fillSelect('dfAtividade', atividades, ui.dashFilters.atividade, 'Todas as atividades');
   fillSelect('dfTurno', turnos, ui.dashFilters.turno, 'Todos os turnos');
 }
@@ -1433,6 +1552,7 @@ function filteredPeople(){
   return state.people.filter(p=>{
     if(f.status && p.status !== f.status) return false;
     if(f.setor && p.setor !== f.setor) return false;
+    if(f.cargo && p.cargo !== f.cargo) return false;
     if(f.atividade && p.atividade !== f.atividade) return false;
     if(f.turno && p.turno !== f.turno) return false;
     if(f.funcao && p.funcao !== f.funcao) return false;
@@ -1546,6 +1666,7 @@ function updateSelectionBar(){
 function bindToolbar(){
   document.getElementById('fBusca').addEventListener('input', e=>{ ui.filters.busca = e.target.value; renderTable(); });
   document.getElementById('fSetor').addEventListener('change', e=>{ ui.filters.setor = e.target.value; renderTable(); });
+  document.getElementById('fCargo').addEventListener('change', e=>{ ui.filters.cargo = e.target.value; renderTable(); });
   document.getElementById('fAtividade').addEventListener('change', e=>{ ui.filters.atividade = e.target.value; renderTable(); });
   document.getElementById('fTurno').addEventListener('change', e=>{ ui.filters.turno = e.target.value; renderTable(); });
   document.getElementById('fFuncao').addEventListener('change', e=>{ ui.filters.funcao = e.target.value; renderTable(); });
