@@ -826,7 +826,7 @@ table.resumo-table tr.resumo-total-row td{border-bottom:none;border-top:2px soli
       <button class="btn ghost" data-close="modalImport">✕</button>
     </div>
     <div class="modal-body">
-      <p class="hint" style="margin-top:0;">Aceita planilhas no mesmo layout do modelo (Colaborador, CPF, Atividade, Cargo/Descrição da Função, Turno, Jornada, Hora refeição, Jornada Semanal, Escala/Folga, Data da Admissão). Pessoas com CPF já cadastrado na base são ignoradas automaticamente — ninguém entra duplicado. Ao final, o sistema também compara com a base atual: quem não aparecer nesta planilha é listado para você decidir se foi desligado.</p>
+      <p class="hint" style="margin-top:0;">Aceita planilhas no mesmo layout do modelo (Colaborador, CPF, Atividade, Cargo/Descrição da Função, Turno, Jornada, Hora refeição, Jornada Semanal, Escala/Folga, Data da Admissão). Pessoas com CPF já cadastrado na base não entram duplicadas — mas se a planilha trouxer valores para campos que na base ainda estão como "A definir" ou em branco (cargo, setor, atividade, função, turno, horário, hora refeição, jornada semanal, folga, matrícula), esses campos são preenchidos automaticamente com o valor da planilha. Campos que já têm um valor definido na base nunca são sobrescritos. Ao final, o sistema também compara com a base atual: quem não aparecer nesta planilha é listado para você decidir se foi desligado.</p>
       <div class="dropzone" id="dropzone">
         <div>📄 Clique para escolher o arquivo (.xlsx)</div>
         <div class="hint" style="margin-top:6px;">ou arraste o arquivo até aqui</div>
@@ -835,6 +835,7 @@ table.resumo-table tr.resumo-total-row td{border-bottom:none;border-top:2px soli
       <div id="importResult" style="display:none;">
         <div class="section-title">Resultado</div>
         <p id="importSummary" style="font-weight:600;"></p>
+        <div class="import-result-list" id="importUpdatedList" style="display:none;"></div>
         <div class="import-result-list" id="importIgnoredList" style="display:none;"></div>
       </div>
       <div id="importWarningsBox" style="display:none;margin-top:14px;">
@@ -2221,6 +2222,15 @@ function normalizeHeader(h){
   return normalize(h).replace(/[\/]/g,' ').replace(/\s+/g,' ').trim();
 }
 
+// Campos que podem ficar "A definir" ou em branco e que a importação pode preencher
+// quando a pessoa já está cadastrada, sem nunca sobrescrever um valor já definido.
+const CAMPOS_ATUALIZAVEIS_IMPORTACAO = ['matricula','cargo','setor','atividade','funcao','turno','horario','horaRefeicao','jornadaSemanal','folga'];
+function valorIndefinido(v){
+  if(v===undefined || v===null) return true;
+  const s = String(v).trim();
+  return s==='' || s==='A definir';
+}
+
 async function processImportFile(file){
   try{
     const buf = await file.arrayBuffer();
@@ -2240,6 +2250,7 @@ async function processImportFile(file){
     const sheetCpfs = new Set(); // todo CPF que aparece na planilha nova, adicionado ou não
     let added = 0;
     const ignored = [];
+    const atualizados = [];
     const admissaoWarnings = [];
     const hoje = todayISO();
 
@@ -2255,7 +2266,32 @@ async function processImportFile(file){
       if(cpfDigits) sheetCpfs.add(cpfDigits);
 
       if(cpfDigits && (existingCpfs.has(cpfDigits) || newCpfsThisImport.has(cpfDigits))){
-        ignored.push(`${titleCase(rec.nome)} (CPF já cadastrado)`);
+        // Pessoa já cadastrada: não duplica, mas preenche campos que ainda
+        // estejam "A definir" ou em branco com o que veio na planilha.
+        const pessoaExistente = state.people.find(p => normalizeCpfDigits(p.cpf) === cpfDigits);
+        if(pessoaExistente){
+          const camposPreenchidos = [];
+          CAMPOS_ATUALIZAVEIS_IMPORTACAO.forEach(campo=>{
+            const novoValor = rec[campo];
+            if(!valorIndefinido(novoValor) && valorIndefinido(pessoaExistente[campo])){
+              pessoaExistente[campo] = (campo==='cargo' || campo==='setor') ? titleCase(novoValor) : novoValor;
+              camposPreenchidos.push(campo);
+            }
+          });
+          if(camposPreenchidos.length){
+            pessoaExistente.historico = pessoaExistente.historico || [];
+            pessoaExistente.historico.push({
+              data: hoje,
+              evento: 'Atualização via importação',
+              detalhe: `Campos preenchidos a partir de ${escapeHtml(cleanText(file.name))}: ${camposPreenchidos.join(', ')}`
+            });
+            atualizados.push(`${titleCase(pessoaExistente.nome)} (${camposPreenchidos.join(', ')})`);
+          } else {
+            ignored.push(`${titleCase(rec.nome)} (CPF já cadastrado, sem dados novos para preencher)`);
+          }
+        } else {
+          ignored.push(`${titleCase(rec.nome)} (CPF já cadastrado)`);
+        }
         return;
       }
       if(cpfDigits) newCpfsThisImport.add(cpfDigits);
@@ -2300,7 +2336,14 @@ async function processImportFile(file){
     renderTable(); renderDashboard();
 
     document.getElementById('importResult').style.display='block';
-    document.getElementById('importSummary').textContent = `${added} pessoa(s) importada(s). ${ignored.length} ignorada(s) por CPF já cadastrado.`;
+    document.getElementById('importSummary').textContent = `${added} pessoa(s) importada(s). ${atualizados.length} pessoa(s) já cadastrada(s) tiveram dados pendentes preenchidos. ${ignored.length} ignorada(s) sem alterações.`;
+    const updatedEl = document.getElementById('importUpdatedList');
+    if(atualizados.length){
+      updatedEl.style.display='block';
+      updatedEl.innerHTML = `<div style="font-weight:600;margin-bottom:4px;">Atualizadas (dados pendentes preenchidos):</div>` + atualizados.map(t=>`<div>• ${escapeHtml(t)}</div>`).join('');
+    } else {
+      updatedEl.style.display='none';
+    }
     const listEl = document.getElementById('importIgnoredList');
     if(ignored.length){
       listEl.style.display='block';
@@ -2319,7 +2362,7 @@ async function processImportFile(file){
 
     renderImportAusentes(ausentes);
 
-    toast(`Importação concluída: ${added} adicionada(s), ${ignored.length} ignorada(s)${ausentes.length ? `, ${ausentes.length} não encontrada(s) na planilha nova` : ''}.`);
+    toast(`Importação concluída: ${added} adicionada(s), ${atualizados.length} atualizada(s), ${ignored.length} ignorada(s)${ausentes.length ? `, ${ausentes.length} não encontrada(s) na planilha nova` : ''}.`);
   }catch(e){
     console.error(e);
     toast('Não foi possível ler essa planilha. Verifique o formato e tente novamente.');
