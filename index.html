@@ -826,7 +826,7 @@ table.resumo-table tr.resumo-total-row td{border-bottom:none;border-top:2px soli
       <button class="btn ghost" data-close="modalImport">✕</button>
     </div>
     <div class="modal-body">
-      <p class="hint" style="margin-top:0;">Aceita planilhas no mesmo layout do modelo (Colaborador, CPF, Atividade, Cargo, Turno, Jornada, Hora refeição, Jornada Semanal, Escala/Folga, Data de admissão). Pessoas com CPF já cadastrado na base são ignoradas automaticamente — ninguém entra duplicado. Ao final, o sistema também compara com a base atual: quem não aparecer nesta planilha é listado para você decidir se foi desligado.</p>
+      <p class="hint" style="margin-top:0;">Aceita planilhas no mesmo layout do modelo (Colaborador, CPF, Atividade, Cargo/Descrição da Função, Turno, Jornada, Hora refeição, Jornada Semanal, Escala/Folga, Data da Admissão). Pessoas com CPF já cadastrado na base são ignoradas automaticamente — ninguém entra duplicado. Ao final, o sistema também compara com a base atual: quem não aparecer nesta planilha é listado para você decidir se foi desligado.</p>
       <div class="dropzone" id="dropzone">
         <div>📄 Clique para escolher o arquivo (.xlsx)</div>
         <div class="hint" style="margin-top:6px;">ou arraste o arquivo até aqui</div>
@@ -2206,16 +2206,16 @@ const HEADER_ALIASES = {
   'colaborador':'nome', 'nome':'nome', 'nome completo':'nome',
   'cpf':'cpf',
   'atividade':'atividade',
-  'cargo':'cargo',
-  'funcao':'funcao', 'função':'funcao',
+  'cargo':'cargo', 'descricao da funcao':'cargo', 'descricao funcao':'cargo', 'descricao do cargo':'cargo',
+  'funcao':'funcao',
   'turno':'turno',
   'jornada':'horario',
-  'hora refeicao':'horaRefeicao', 'hora refeição':'horaRefeicao',
+  'hora refeicao':'horaRefeicao',
   'jornada semanal':'jornadaSemanal',
   'escala folga':'folga', 'escala/ folga':'folga', 'escala/folga':'folga', 'folga':'folga',
   'setor':'setor',
-  'data admissao':'dataAdmissaoRaw', 'data de admissao':'dataAdmissaoRaw', 'admissao':'dataAdmissaoRaw', 'data de admissão':'dataAdmissaoRaw',
-  'matricula':'matricula', 'matrícula':'matricula'
+  'data admissao':'dataAdmissaoRaw', 'data de admissao':'dataAdmissaoRaw', 'admissao':'dataAdmissaoRaw', 'data da admissao':'dataAdmissaoRaw',
+  'matricula':'matricula'
 };
 function normalizeHeader(h){
   return normalize(h).replace(/[\/]/g,' ').replace(/\s+/g,' ').trim();
